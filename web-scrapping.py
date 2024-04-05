@@ -9,12 +9,19 @@ __email__ = "devendra.scs@gmail.com"
 __status__ = "Production"
 # Script for webscrapping demonstration from https://www.sportstimingsolutions.in
 # This program is only for demonstrations and author do not held any responsiblity of any license breach or malfuncitons.
-
+import logging
 from bs4 import BeautifulSoup
 import urllib3
 from db.dbutil import DatabaseUtil
 from concurrent.futures import ThreadPoolExecutor
 
+def logs() -> None:
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(messages)s",
+        datefmt="&Y-%m-%d %H:%M:%S",
+        filename="basic.log",
+    )
 
 #<BEGIN Modify>
 #Change below paramenter
@@ -31,7 +38,8 @@ http = urllib3.PoolManager(cert_reqs='CERT_NONE')
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 dbutil = DatabaseUtil()
 event_id = dbutil.insert_event_details(EVENT_NAME, EVENT_CITY, EVENT_DATE, EVENT_YEAR,BASE_URL)
-print("Event ID:", event_id)
+#print("Event ID:", event_id)
+logging.info("Event ID:", event_id)
 
 
 def parseAndWriteResponse(event_id, soup, bibNumber, url):
@@ -83,9 +91,11 @@ def parseAndWriteResponse(event_id, soup, bibNumber, url):
                 distance="10"
 
         else:
-            print("Error: Distance text not found.")
+            #print("Error: Distance text not found.")
+            logging.error("Error: Distance text not found.")
     except:
-        print("Error in finding distance")
+        #print("Error in finding distance")
+        logging.error("This is an error message")
 
     splits={}
     pace=""
@@ -122,9 +132,9 @@ def parseAndWriteResponse(event_id, soup, bibNumber, url):
 
 def process_bib(bibNumber):
     resultURL = BASE_URL + str(bibNumber)
-    print(" Fetching details of BIB:", resultURL)
+    logging.info(" Fetching details of BIB:", resultURL)
     if bibNumber % 100 == 0:
-        print(" Fetching details of BIB:", bibNumber)    
+        logging.info(" Fetching details of BIB:", bibNumber)    
     try:
         result = http.request('GET', resultURL)
         html = result.data
@@ -132,13 +142,13 @@ def process_bib(bibNumber):
             soup = BeautifulSoup(html, "html5lib")            
             parseAndWriteResponse(event_id, soup, bibNumber, resultURL)            
     except Exception as e:
-        print("Error occurred during HTTP request:", str(e))
+        logging.error("Error occurred during HTTP request:", str(e))
     return True    
 
 with ThreadPoolExecutor(max_workers=5) as executor:
     bibNumbers = range(START_BIB_NUMBER, END_BIB_NUMBER)
     executor.map(process_bib, bibNumbers)
-    print("Thread pool completed successfully")
+    logging.info("Thread pool completed succesfully")
 
-    
-print("Completed successfully")
+
+logging.info("completed succesfully")
